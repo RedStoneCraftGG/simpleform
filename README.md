@@ -7,7 +7,7 @@ A lightweight and intuitive form builder for Dragonfly-MC servers, making it eas
 
 ```go
 func TestForm(p *player.Player) {
-	sf.New("title", "desc").
+	simpleform.New("title", "desc").
 		B("text1", "", func(p *player.Player) { p.Message("Clicked!") }).
 		B("text2", "", func(p *player.Player) { p.Message("Clicked!") }).
 		B("text3", "textures/red/carlotta", func(p *player.Player) { p.Message("Clicked!") }).
