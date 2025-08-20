@@ -49,7 +49,15 @@ func TestSubmit(p *player.Player) {
 
 <img width="768" height="768" alt="image" src="https://github.com/user-attachments/assets/2ca6b238-c61e-485c-b486-20bffc13f2db" />
 
+### Modal Form
 
-## Still on update!
+```go
+func TestModal(p *player.Player) {
+	simpleform.NewModalForm("Conrim", "Do you want to have 271T added to your account?").
+		B1("YESSSS PLEASE!!!", func(p *player.Player) { p.Message("271T was added to your account") }).
+		B2("(Calmly Reject)", func(p *player.Player) { p.Message("You reject the offer") }).
+		S(p)
+}
+```
 
-I'll add another form like SubmitForm and ModalForm later
+<img width="768" height="768" alt="image" src="https://github.com/user-attachments/assets/ad4bf143-025b-447b-b105-3a8fda636f27" />
