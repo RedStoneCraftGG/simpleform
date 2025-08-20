@@ -62,6 +62,18 @@ type SubmitFormResponse struct {
 
 type submitFormHandler struct{ *SubmitForm }
 
+type ModalForm struct {
+	title    string
+	content  string
+	btn1Text string
+	btn2Text string
+	btn1Func func(p *player.Player)
+	btn2Func func(p *player.Player)
+	onClose  func(p *player.Player)
+}
+
+type modalFormHandler struct{ *ModalForm }
+
 // ===================== SimpleForm Methods =====================
 
 func (m *menuHandler) Title() string { return m.title }
@@ -159,7 +171,10 @@ func (f *SubmitForm) Dropdown(label string, options []string, defaultIndex ...in
 		idx = defaultIndex[0]
 	}
 	f.elements = append(f.elements, submitElement{
-		typ: "dropdown", label: label, options: options, defaultInt: idx,
+		typ:        "dropdown",
+		label:      label,
+		options:    options,
+		defaultInt: idx,
 	})
 	return f
 }
@@ -170,7 +185,9 @@ func (f *SubmitForm) Toggle(label string, defaultValue ...bool) *SubmitForm {
 		val = defaultValue[0]
 	}
 	f.elements = append(f.elements, submitElement{
-		typ: "toggle", label: label, defaultBool: val,
+		typ:         "toggle",
+		label:       label,
+		defaultBool: val,
 	})
 	return f
 }
@@ -181,7 +198,12 @@ func (f *SubmitForm) Slider(label string, min, max, step int, defaultValue ...in
 		val = defaultValue[0]
 	}
 	f.elements = append(f.elements, submitElement{
-		typ: "slider", label: label, min: min, max: max, step: step, defaultFloat: val,
+		typ:          "slider",
+		label:        label,
+		min:          min,
+		max:          max,
+		step:         step,
+		defaultFloat: val,
 	})
 	return f
 }
@@ -192,7 +214,10 @@ func (f *SubmitForm) Input(label, placeholder string, defaultValue ...string) *S
 		val = defaultValue[0]
 	}
 	f.elements = append(f.elements, submitElement{
-		typ: "input", label: label, placeholder: placeholder, defaultText: val,
+		typ:         "input",
+		label:       label,
+		placeholder: placeholder,
+		defaultText: val,
 	})
 	return f
 }
@@ -385,6 +410,84 @@ func (h *submitFormHandler) SubmitJSON(b []byte, submitter form.Submitter, tx *w
 func (h *submitFormHandler) Submit(p *player.Player, idx int) {}
 
 func (h *submitFormHandler) Close(p *player.Player) {
+	if h.onClose != nil {
+		h.onClose(p)
+	}
+}
+
+// ===================== ModalForm Structs & Methods =====================
+
+func NewModalForm(title, content string) *ModalForm {
+	return &ModalForm{
+		title:   title,
+		content: content,
+	}
+}
+
+func (m *ModalForm) B1(text string, f func(p *player.Player)) *ModalForm {
+	m.btn1Text = text
+	m.btn1Func = f
+	return m
+}
+
+func (m *ModalForm) B2(text string, f func(p *player.Player)) *ModalForm {
+	m.btn2Text = text
+	m.btn2Func = f
+	return m
+}
+
+func (m *ModalForm) Close(f func(p *player.Player)) *ModalForm {
+	m.onClose = f
+	return m
+}
+
+func (m *ModalForm) S(p *player.Player) { p.SendForm(&modalFormHandler{m}) }
+
+// ===================== modalFormHandler Implementation =====================
+
+func (h *modalFormHandler) MarshalJSON() ([]byte, error) {
+	data := map[string]any{
+		"type":    "modal",
+		"title":   h.title,
+		"content": h.content,
+		"button1": h.btn1Text,
+		"button2": h.btn2Text,
+	}
+	return json.Marshal(data)
+}
+
+func (h *modalFormHandler) SubmitJSON(b []byte, submitter form.Submitter, tx *world.Tx) error {
+	if len(b) == 0 || string(b) == "null" {
+		if h.onClose != nil {
+			if p, ok := submitter.(*player.Player); ok {
+				h.onClose(p)
+			}
+		}
+		return nil
+	}
+
+	var btnIdx bool
+	if err := json.Unmarshal(b, &btnIdx); err != nil {
+		return fmt.Errorf("failed to parse modal submit: %w", err)
+	}
+
+	if p, ok := submitter.(*player.Player); ok {
+		if btnIdx {
+			if h.btn1Func != nil {
+				h.btn1Func(p)
+			}
+		} else {
+			if h.btn2Func != nil {
+				h.btn2Func(p)
+			}
+		}
+	}
+	return nil
+}
+
+func (h *modalFormHandler) Submit(p *player.Player, idx int) {}
+
+func (h *modalFormHandler) Close(p *player.Player) {
 	if h.onClose != nil {
 		h.onClose(p)
 	}
