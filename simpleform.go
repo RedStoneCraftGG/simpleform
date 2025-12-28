@@ -12,10 +12,17 @@ import (
 // ===================== Structs =====================
 
 type SimpleForm struct {
-	title   string
-	desc    string
-	btns    []buttonData
-	onClose func(p *player.Player)
+	title     string
+	desc      string
+	btns      []buttonData
+	onClose   func(p *player.Player)
+	structure []formStructure // Not yet used
+}
+
+type formStructure struct {
+	typ    string
+	header string
+	label  string
 }
 
 type buttonData struct {
@@ -80,6 +87,29 @@ func (m *menuHandler) Title() string { return m.title }
 
 func (m *menuHandler) Body() string { return m.desc }
 
+func (m *menuHandler) Header(header string) *menuHandler {
+	m.structure = append(m.structure, formStructure{
+		typ:    "header",
+		header: header,
+	})
+	return m
+}
+
+func (m *menuHandler) Label(label string) *menuHandler {
+	m.structure = append(m.structure, formStructure{
+		typ:   "label",
+		label: label,
+	})
+	return m
+}
+
+func (m *menuHandler) Divider() *menuHandler {
+	m.structure = append(m.structure, formStructure{
+		typ: "divider",
+	})
+	return m
+}
+
 func (m *menuHandler) Buttons() []form.Button {
 	btns := make([]form.Button, len(m.btns))
 	for i, b := range m.btns {
@@ -101,6 +131,8 @@ func (m *menuHandler) Close(p *player.Player) {
 		m.onClose(p)
 	}
 }
+
+// Couldn't figure out how to add header, label, and divider to the form
 
 func (m *menuHandler) MarshalJSON() ([]byte, error) {
 	btns := make([]button, len(m.btns))
@@ -154,6 +186,29 @@ func (f *SimpleForm) B(text, path string, cb func(p *player.Player)) *SimpleForm
 	return f
 }
 
+func (f *SimpleForm) H(header string) *SimpleForm {
+	f.structure = append(f.structure, formStructure{
+		typ:    "header",
+		header: header,
+	})
+	return f
+}
+
+func (f *SimpleForm) L(label string) *SimpleForm {
+	f.structure = append(f.structure, formStructure{
+		typ:   "label",
+		label: label,
+	})
+	return f
+}
+
+func (f *SimpleForm) D() *SimpleForm {
+	f.structure = append(f.structure, formStructure{
+		typ: "divider",
+	})
+	return f
+}
+
 func (f *SimpleForm) Close(cb func(p *player.Player)) *SimpleForm {
 	f.onClose = cb
 	return f
@@ -163,7 +218,36 @@ func (f *SimpleForm) S(p *player.Player) { p.SendForm(&menuHandler{f}) }
 
 // ===================== SubmitForm Builder =====================
 
-func NewSubmitForm(title, desc string) *SubmitForm { return &SubmitForm{title: title, desc: desc} }
+func NewSubmitForm(title string, desc ...string) *SubmitForm {
+	d := ""
+	if len(desc) > 0 {
+		d = desc[0]
+	}
+	return &SubmitForm{title: title, desc: d}
+}
+
+func (f *SubmitForm) Header(header string) *SubmitForm {
+	f.elements = append(f.elements, submitElement{
+		typ:   "header",
+		label: header,
+	})
+	return f
+}
+
+func (f *SubmitForm) Label(label string) *SubmitForm {
+	f.elements = append(f.elements, submitElement{
+		typ:   "label",
+		label: label,
+	})
+	return f
+}
+
+func (f *SubmitForm) Divider() *SubmitForm {
+	f.elements = append(f.elements, submitElement{
+		typ: "divider",
+	})
+	return f
+}
 
 func (f *SubmitForm) Dropdown(label string, options []string, defaultIndex ...int) *SubmitForm {
 	idx := 0
@@ -331,6 +415,24 @@ func (h *submitFormHandler) MarshalJSON() ([]byte, error) {
 	var content []any
 	for _, e := range h.elements {
 		switch e.typ {
+		case "header":
+			m := map[string]any{
+				"type": "header",
+				"text": e.label,
+			}
+			content = append(content, m)
+		case "label":
+			m := map[string]any{
+				"type": "label",
+				"text": e.label,
+			}
+			content = append(content, m)
+		case "divider":
+			m := map[string]any{
+				"type": "divider",
+				"text": "", // Required
+			}
+			content = append(content, m)
 		case "dropdown":
 			m := map[string]any{
 				"type":    "dropdown",
