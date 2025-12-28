@@ -18,28 +18,36 @@ func TestForm(p *player.Player) {
 
 <img width="768" height="768" alt="image" src="https://github.com/user-attachments/assets/e0c29a0e-5478-4b08-96b0-6e60627200cd" />
 
+I couldn't figure out how to add a header, label, and divider. So, I'll leave some code unused inside. I hope it won't crash the code...
+
 ### Submit Form
 
 ```go
 func TestSubmit(p *player.Player) {
-	simpleform.NewSubmitForm("Settings", "Description (Currently doesn't showed up)").
+	simpleform.NewSubmitForm("Settings", "Description (Not used, try using Label instead)").
+		// Every element is counted as 1 index
+
+		Header("This is a header"). // index 0 - Header Text
+		Label("This is a label").   // index 1 - Label Text
+		Divider().                  // index 2 - Divider
 
 		// text: string, options: []string, default(optional): int
-		Dropdown("Your favorite color:", []string{"Yellow", "Red", "Blue", "Green"}).
+		Dropdown("Your favorite color:", []string{"Yellow", "Red", "Blue", "Green"}). // index 3 - Dropdown
 
 		// text: string, default(optional): bool
-		Toggle("Turn on night mode?").
+		Toggle("Turn on night mode?"). // index 4 - Toggle
 
 		// text: string, min: int, max: int, step: int, default(optional): int
-		Slider("Volume:", 0, 100, 5).
+		Slider("Volume", 0, 100, 5). // index 5 - Slider
 
 		// text: string, placeholder: string, default(optional): string
-		Input("Type your Nickname:", "Nickname").
+		Input("Type your Nickname:", "Nickname"). // index 6 - Input
+
 		OnSubmit(func(p *player.Player, r simpleform.SubmitFormResponse) {
-			color := r.Dropdown(0)   // index 0
-			nightMode := r.Toggle(1) // index 1
-			volume := r.Slider(2)    // index 2
-			nickname := r.Input(3)   // index 3
+			color := r.Dropdown(3)   // index 3
+			nightMode := r.Toggle(4) // index 4
+			volume := r.Slider(5)    // index 5
+			nickname := r.Input(6)   // index 6
 			p.Messagef("color: %s, Night Mode: %t, Volume: %v, Nick: %s", color, nightMode, volume, nickname)
 		}).
 		OnClose(func(p *player.Player) { /*optional*/ }).
@@ -47,7 +55,8 @@ func TestSubmit(p *player.Player) {
 }
 ```
 
-<img width="768" height="768" alt="image" src="https://github.com/user-attachments/assets/2ca6b238-c61e-485c-b486-20bffc13f2db" />
+<img width="768" height="768" alt="image" src="https://github.com/user-attachments/assets/077ee25e-cc7a-4f0a-ba98-87201b3d76e0" />
+
 
 ### Modal Form
 
